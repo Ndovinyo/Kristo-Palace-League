@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Kristo Palace League — Master (Editable)</title>
+<style>
+:root{--blue:#1e3a8a;--green:#10b981;--black:#0b1220;--text:#f9fafb}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--text);
+background:linear-gradient(135deg,#6b21a8 0%, #2563eb 50%, #ef4444 100%);min-height:100vh;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:18px auto;padding:18px}
+header{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.logo{width:110px;height:110px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(180deg,#ffd36b,#c79a2c);box-shadow:0 10px 24px rgba(0,0,0,.35);border:2px solid rgba(0,0,0,.2)}
+h1{margin:0;font-size:clamp(20px,3vw,34px);font-weight:800}
+.tag{opacity:.95;color:rgba(255,255,255,.95);font-size:13px}
+.grid{display:grid;gap:18px}
+@media(min-width:980px){.grid{grid-template-columns:1.1fr .9fr}}
+.card{background:rgba(255,255,255,0.04);border-radius:14px;border:1px solid rgba(0,0,0,.25);box-shadow:0 8px 20px rgba(0,0,0,.26);overflow:hidden}
+.card h2{margin:0;padding:14px 16px;font-size:18px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;justify-content:space-between}
+.card .body{padding:14px}
+table{width:100%;border-collapse:separate;border-spacing:0;border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,.2);background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));table-layout:fixed}
+thead th{background:var(--blue);color:#fff;font-weight:800;padding:10px 12px;font-size:13px;border-right:1px solid rgba(255,255,255,.03)}
+thead th:nth-child(1),thead th:nth-child(2){text-align:left;padding-left:14px}thead th:nth-child(n+3){text-align:center}
+tbody td{padding:10px 12px;font-size:14px;color:#f3f4f6;border-bottom:1px solid rgba(255,255,255,.03);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tbody td:nth-child(1),tbody td:nth-child(2){text-align:left;padding-left:14px}tbody td:nth-child(n+3){text-align:center}
+tbody tr:nth-child(odd){background:rgba(16,185,129,0.08)}tbody tr:nth-child(even){background:rgba(0,0,0,0.28)}tbody tr:hover{outline:2px solid var(--green);outline-offset:-2px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);padding:8px 12px;border-radius:10px;color:#fff;font-weight:700;cursor:pointer}
+.fixture{display:grid;grid-template-columns:1fr 84px 40px 84px 1fr;gap:8px;align-items:center;padding:10px;border-radius:10px;background:rgba(0,0,0,0.32);border:1px solid rgba(255,255,255,0.04);margin-bottom:8px}
+.inputScore{width:72px;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#fff;font-weight:700;text-align:center}
+.small{font-size:13px;color:rgba(255,255,255,.9)}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo"><img src="kristo_logo.png" alt="Kristo Palace Logo" style="max-width:96%;max-height:96%;border-radius:8px"></div>
+      <div>
+        <h1>Kristo Palace League</h1>
+        <div class="tag">Editable master — you can enter fixture scores here (scores persist on this browser)</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Standings</h2>
+        <div class="body">
+          <div style="overflow:auto">
+            <table id="leagueTable" aria-label="League table">
+              <colgroup>
+                <col style="width:6%"/><col style="width:34%"/><col style="width:6%"/><col style="width:6%"/><col style="width:6%"/><col style="width:6%"/><col style="width:8%"/><col style="width:8%"/><col style="width:8%"/><col style="width:12%"/>
+              </colgroup>
+              <thead><tr><th>#</th><th>Team</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:8px" class="small" id="progressNote">Matches recorded: 0 / 0</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Fixtures</h2>
+        <div class="body">
+          <div class="top-row" style="margin-bottom:10px">
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn" id="prevBtn">◀ Previous</button>
+              <button class="btn" id="nextBtn">Next ▶</button>
+              <div style="font-weight:700" id="mdTitle">Matchday 1</div>
+            </div>
+            <div class="small" id="mdCount"></div>
+          </div>
+          <div id="fixturesContainer" aria-live="polite"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+/* ===== CONFIG ===== */
+const TEAMS = [
+  "Ndovinyo","ReAlsoCiaLDad","Toenails","Gluelavish","Mzee","Bibi ni Bibi",
+  "Applejuicee","Kristo Palace","Sam","kellyiscool","Owen","Geoffery Mosiria",
+  "Vj Patelo (wakudumu)","massive fc","Callisto","Tatsuya Moussa",
+  "Young De Bruyne","Dee","Maziwaaa","Rustix"
+];
+// fixed seed so schedule is deterministic and identical across files/visitors
+const FIXED_SEED = 123456789;
+
+/* seeded shuffle (Fisher-Yates with LCG) */
+function seededShuffle(array, seed){
+  const arr = array.slice();
+  let s = seed >>> 0;
+  function rand(){
+    // simple LCG
+    s = (1664525 * s + 1013904223) >>> 0;
+    return s / 4294967296;
+  }
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(rand()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+/* deterministic round-robin generator using seeded order */
+function generateFixedRounds(teams, seed){
+  const n = teams.length;
+  const order = seededShuffle(teams, seed);
+  const rounds = [];
+  const half = n/2;
+  const rotating = order.slice(1);
+  for(let r=0;r<n-1;r++){
+    const left = [order[0], ...rotating.slice(0, half-1)];
+    const right = rotating.slice(half-1).slice(0, half).reverse();
+    const matches = [];
+    for(let i=0;i<left.length;i++){
+      matches.push({ home: left[i], away: right[i], hs: null, as: null, applied:false });
+    }
+    rounds.push(matches);
+    rotating.unshift(rotating.pop());
+  }
+  // deterministically shuffle matches inside each round using the same seed offset
+  rounds.forEach((rd, idx)=>{
+    const arr = rd.slice();
+    const rs = seed + idx;
+    const sh = seededShuffle(arr, rs);
+    rounds[idx] = sh;
+  });
+  return rounds;
+}
+
+/* ===== STATE ===== */
+const STORAGE_KEY = 'kpl_master_v1';
+let rounds = generateFixedRounds(TEAMS, FIXED_SEED);
+let currentMD = 0;
+const standings = new Map();
+function blankStats(){return {team:'', MP:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0};}
+function resetStandings(){
+  standings.clear(); TEAMS.forEach(t=>{ const s=blankStats(); s.team=t; standings.set(t,s); });
+}
+
+/* ===== apply/unapply logic ===== */
+function computeDeltas(hs, as){
+  const h={MP:1,W:0,D:0,L:0,GF:hs,GA:as,Pts:0};
+  const a={MP:1,W:0,D:0,L:0,GF:as,GA:hs,Pts:0};
+  if(hs>as){ h.W=1; a.L=1; h.Pts=3; }
+  else if(hs<as){ a.W=1; h.L=1; a.Pts=3; }
+  else { h.D=1; a.D=1; h.Pts=1; a.Pts=1; }
+  return [h,a];
+}
+function applyDelta(team, d){
+  const s = standings.get(team);
+  s.MP += d.MP||0; s.W += d.W||0; s.D += d.D||0; s.L += d.L||0;
+  s.GF += d.GF||0; s.GA += d.GA||0; s.Pts += d.Pts||0;
+}
+function unapplyMatch(match){
+  if(!match.applied) return;
+  const [hd, ad] = computeDeltas(match.hs, match.as);
+  Object.keys(hd).forEach(k=>hd[k] = -hd[k]);
+  Object.keys(ad).forEach(k=>ad[k] = -ad[k]);
+  applyDelta(match.home, hd);
+  applyDelta(match.away, ad);
+  match.applied = false;
+}
+function applyMatch(match, hs, as){
+  const [hd, ad] = computeDeltas(hs, as);
+  applyDelta(match.home, hd);
+  applyDelta(match.away, ad);
+  match.hs = hs; match.as = as; match.applied = true;
+}
+
+/* ===== persistence: localStorage (master only) ===== */
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({rounds, currentMD})); } catch(e){ console.warn(e); }
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return false;
+    const obj = JSON.parse(raw);
+    if(obj && obj.rounds){
+      rounds = obj.rounds; currentMD = obj.currentMD || 0;
+      return true;
+    }
+    return false;
+  }catch(e){ console.warn(e); return false; }
+}
+
+/* ===== UI renderers ===== */
+function renderTable(){
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  const rows = Array.from(standings.values()).map(s => ({...s, GD: s.GF - s.GA}));
+  rows.sort((a,b)=> b.Pts - a.Pts || (b.GF-b.GA) - (a.GF-a.GA) || b.GF - a.GF || a.team.localeCompare(b.team));
+  rows.forEach((r,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="pos">${i+1}</td>
+      <td class="team">${r.team}</td>
+      <td>${r.MP}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
+      <td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${r.Pts}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateProgress(){
+  let played=0,total=0;
+  rounds.forEach(r=>r.forEach(m=>{ total++; if(m.applied) played++; }));
+  document.getElementById('progressNote').textContent = `Matches recorded: ${played} / ${total}`;
+}
+
+function onScoreEdit(mdIndex, matchIndex, hsVal, asVal){
+  const match = rounds[mdIndex][matchIndex];
+  unapplyMatch(match);
+  const hs = hsVal === '' || hsVal === null ? null : parseInt(hsVal,10);
+  const as = asVal === '' || asVal === null ? null : parseInt(asVal,10);
+  if(hs===null || as===null || Number.isNaN(hs) || Number.isNaN(as)){
+    match.hs = hs; match.as = as; match.applied = false;
+  } else {
+    applyMatch(match, hs, as);
+  }
+  renderTable(); updateProgress(); saveState();
+}
+
+function renderMatchday(mdIndex){
+  const container = document.getElementById('fixturesContainer');
+  container.innerHTML = '';
+  const md = rounds[mdIndex];
+  md.forEach((m, idx)=>{
+    const hs = (m.hs === null || m.hs === undefined) ? '' : m.hs;
+    const as = (m.as === null || m.as === undefined) ? '' : m.as;
+    const div = document.createElement('div');
+    div.className = 'fixture';
+    div.innerHTML = `<div style="text-align:right;font-weight:700">${m.home}</div>
+      <input class="inputScore" type="number" min="0" value="${hs}" aria-label="${m.home} score" />
+      <div style="text-align:center;opacity:.7">vs</div>
+      <input class="inputScore" type="number" min="0" value="${as}" aria-label="${m.away} score" />
+      <div style="font-weight:700">${m.away}</div>`;
+    const inputs = div.querySelectorAll('input');
+    const homeInput = inputs[0], awayInput = inputs[1];
+    homeInput.addEventListener('input', e=> onScoreEdit(mdIndex, idx, e.target.value, awayInput.value));
+    awayInput.addEventListener('input', e=> onScoreEdit(mdIndex, idx, homeInput.value, e.target.value));
+    container.appendChild(div);
+  });
+  document.getElementById('mdTitle').textContent = `Matchday ${mdIndex+1}`;
+  document.getElementById('mdCount').textContent = `(of ${rounds.length})`;
+  document.getElementById('prevBtn').disabled = mdIndex===0;
+  document.getElementById('nextBtn').disabled = mdIndex===rounds.length-1;
+}
+
+/* ===== bootstrap ===== */
+function init(){
+  const loaded = loadState();
+  resetStandings();
+  if(loaded){
+    // rebuild standings from applied matches
+    rounds.forEach(r=>r.forEach(m=>{
+      if(m.applied && m.hs!=null && m.as!=null){
+        applyMatch(m, m.hs, m.as);
+      }
+    }));
+  }
+  renderTable();
+  renderMatchday(currentMD);
+  updateProgress();
+
+  document.getElementById('prevBtn').addEventListener('click', ()=>{
+    if(currentMD>0) currentMD--; renderMatchday(currentMD); saveState();
+  });
+  document.getElementById('nextBtn').addEventListener('click', ()=>{
+    if(currentMD < rounds.length-1) currentMD++; renderMatchday(currentMD); saveState();
+  });
+}
+init();
+</script>
+</body>
+</html>

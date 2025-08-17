@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Kristo Palace League — Public View</title>
+<style>
+:root{--blue:#1e3a8a;--green:#10b981;--black:#0b1220;--text:#f9fafb}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--text);
+background:linear-gradient(135deg,#6b21a8 0%, #2563eb 50%, #ef4444 100%);min-height:100vh}
+.wrap{max-width:1200px;margin:18px auto;padding:18px}
+header{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.logo{width:110px;height:110px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(180deg,#ffd36b,#c79a2c);box-shadow:0 10px 24px rgba(0,0,0,.35);border:2px solid rgba(0,0,0,.2)}
+h1{margin:0;font-size:clamp(20px,3vw,34px);font-weight:800}
+.tag{opacity:.95;color:rgba(255,255,255,.95);font-size:13px}
+.grid{display:grid;gap:18px}
+@media(min-width:980px){.grid{grid-template-columns:1.1fr .9fr}}
+.card{background:rgba(255,255,255,0.04);border-radius:14px;border:1px solid rgba(0,0,0,.25);box-shadow:0 8px 20px rgba(0,0,0,.26);overflow:hidden}
+.card h2{margin:0;padding:14px 16px;font-size:18px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;justify-content:space-between}
+.card .body{padding:14px}
+table{width:100%;border-collapse:separate;border-spacing:0;border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,.2);background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));table-layout:fixed}
+thead th{background:var(--blue);color:#fff;font-weight:800;padding:10px 12px;font-size:13px;border-right:1px solid rgba(255,255,255,.03)}
+thead th:nth-child(1),thead th:nth-child(2){text-align:left;padding-left:14px}thead th:nth-child(n+3){text-align:center}
+tbody td{padding:10px 12px;font-size:14px;color:#f3f4f6;border-bottom:1px solid rgba(255,255,255,.03);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tbody td:nth-child(1),tbody td:nth-child(2){text-align:left;padding-left:14px}tbody td:nth-child(n+3){text-align:center}
+tbody tr:nth-child(odd){background:rgba(16,185,129,0.08)}tbody tr:nth-child(even){background:rgba(0,0,0,0.28)}tbody tr:hover{outline:2px solid var(--green);outline-offset:-2px}
+.fixture{display:grid;grid-template-columns:1fr 84px 40px 84px 1fr;gap:8px;align-items:center;padding:10px;border-radius:10px;background:rgba(0,0,0,0.32);border:1px solid rgba(255,255,255,0.04);margin-bottom:8px}
+.small{font-size:13px;color:rgba(255,255,255,.9)}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.btn{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.14);padding:8px 12px;border-radius:10px;color:#fff;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo"><img src="kristo_logo.png" alt="Kristo Palace Logo" style="max-width:96%;max-height:96%;border-radius:8px"></div>
+      <div>
+        <h1>Kristo Palace League</h1>
+        <div class="tag">Public view — fixtures & standings (read-only)</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Standings</h2>
+        <div class="body">
+          <div style="overflow:auto">
+            <table id="leagueTable">
+              <colgroup>
+                <col style="width:6%"/><col style="width:34%"/><col style="width:6%"/><col style="width:6%"/><col style="width:6%"/><col style="width:6%"/><col style="width:8%"/><col style="width:8%"/><col style="width:8%"/><col style="width:12%"/>
+              </colgroup>
+              <thead><tr><th>#</th><th>Team</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:8px" class="small" id="progressNote">Matches recorded: 0 / 0</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Fixtures</h2>
+        <div class="body">
+          <div class="top-row" style="margin-bottom:10px">
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn" id="prevBtn">◀ Previous</button>
+              <button class="btn" id="nextBtn">Next ▶</button>
+              <div style="font-weight:700" id="mdTitle">Matchday 1</div>
+            </div>
+            <div class="small" id="mdCount"></div>
+          </div>
+          <div id="fixturesContainer"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+/* NOTE: public view uses same deterministic seed so schedule matches master */
+const TEAMS = [
+  "Ndovinyo","ReAlsoCiaLDad","Toenails","Gluelavish","Mzee","Bibi ni Bibi",
+  "Applejuicee","Kristo Palace","Sam","kellyiscool","Owen","Geoffery Mosiria",
+  "Vj Patelo (wakudumu)","massive fc","Callisto","Tatsuya Moussa",
+  "Young De Bruyne","Dee","Maziwaaa","Rustix"
+];
+const FIXED_SEED = 123456789;
+function seededShuffle(array, seed){
+  const arr = array.slice(); let s = seed >>> 0;
+  function rand(){ s = (1664525 * s + 1013904223) >>> 0; return s/4294967296; }
+  for(let i=arr.length-1;i>0;i--){ const j=Math.floor(rand()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+function generateFixedRounds(teams, seed){
+  const n = teams.length; const order = seededShuffle(teams, seed); const rounds=[]; const half=n/2; const rotating = order.slice(1);
+  for(let r=0;r<n-1;r++){
+    const left=[order[0], ...rotating.slice(0, half-1)];
+    const right=rotating.slice(half-1).slice(0, half).reverse();
+    const matches=[];
+    for(let i=0;i<left.length;i++){ matches.push({home:left[i], away:right[i], hs:null, as:null, applied:false}); }
+    rounds.push(matches);
+    rotating.unshift(rotating.pop());
+  }
+  rounds.forEach((rd, idx)=>{ rounds[idx] = seededShuffle(rd, seed+idx); });
+  return rounds;
+}
+
+/* create blank standings and optionally apply any pre-recorded results (none by default) */
+const rounds = generateFixedRounds(TEAMS, FIXED_SEED);
+const standings = new Map();
+function blankStats(){return {team:'', MP:0,W:0,D:0,L:0,GF:0,GA:0,Pts:0};}
+function resetStandings(){standings.clear(); TEAMS.forEach(t=>{ const s=blankStats(); s.team=t; standings.set(t,s); });}
+function computeDeltas(hs, as){ const h={MP:1,W:0,D:0,L:0,GF:hs,GA:as,Pts:0}, a={MP:1,W:0,D:0,L:0,GF:as,GA:hs,Pts:0}; if(hs>as){h.W=1;a.L=1;h.Pts=3}else if(hs<as){a.W=1;h.L=1;a.Pts=3}else{h.D=1;a.D=1;h.Pts=1;a.Pts=1} return [h,a];}
+function applyDelta(team,d){ const s=standings.get(team); s.MP+=d.MP||0; s.W+=d.W||0; s.D+=d.D||0; s.L+=d.L||0; s.GF+=d.GF||0; s.GA+=d.GA||0; s.Pts+=d.Pts||0; }
+
+/* No pre-recorded results. If you want to show current master results, export the rounds from master and paste them into rounds variable here before hosting. */
+
+function renderTable(){
+  resetStandings();
+  // apply any results present in rounds
+  rounds.forEach(r=>r.forEach(m=>{ if(m.applied && m.hs!=null && m.as!=null){ const [hd,ad]=computeDeltas(m.hs,m.as); applyDelta(m.home,hd); applyDelta(m.away,ad); } }));
+  const tbody = document.getElementById('tbody'); tbody.innerHTML = '';
+  const rows = Array.from(standings.values()).map(s=>({...s, GD: s.GF - s.GA}));
+  rows.sort((a,b)=> b.Pts - a.Pts || (b.GF-b.GA) - (a.GF-a.GA) || b.GF - a.GF || a.team.localeCompare(b.team));
+  rows.forEach((r,i)=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td>${i+1}</td><td>${r.team}</td><td>${r.MP}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.GF}</td><td>${r.GA}</td><td>${r.GD}</td><td>${r.Pts}</td>`; tbody.appendChild(tr); });
+  updateProgress();
+}
+
+function renderMatchday(md){
+  const container = document.getElementById('fixturesContainer'); container.innerHTML='';
+  rounds[md].forEach(m=>{
+    const div = document.createElement('div'); div.className='fixture';
+    const hs = (m.hs===null||m.hs===undefined)?'':m.hs; const as = (m.as===null||m.as===undefined)?'':m.as;
+    div.innerHTML = `<div style="text-align:right;font-weight:700">${m.home}</div><div style="text-align:center">${hs}</div><div style="text-align:center;opacity:.7">vs</div><div style="text-align:center">${as}</div><div style="font-weight:700">${m.away}</div>`;
+    container.appendChild(div);
+  });
+  document.getElementById('mdTitle').textContent = `Matchday ${md+1}`; document.getElementById('mdCount').textContent = `(of ${rounds.length})`;
+  document.getElementById('prevBtn').disabled = md===0; document.getElementById('nextBtn').disabled = md===rounds.length-1;
+}
+
+function updateProgress(){
+  let played=0,total=0; rounds.forEach(r=>r.forEach(m=>{ total++; if(m.applied) played++; }));
+  document.getElementById('progressNote').textContent = `Matches recorded: ${played} / ${total}`;
+}
+
+let currentMD = 0;
+document.getElementById('prevBtn').addEventListener('click', ()=>{ if(currentMD>0) currentMD--; renderMatchday(currentMD); });
+document.getElementById('nextBtn').addEventListener('click', ()=>{ if(currentMD < rounds.length-1) currentMD++; renderMatchday(currentMD); });
+
+resetStandings(); renderTable(); renderMatchday(currentMD);
+</script>
+</body>
+</html>
